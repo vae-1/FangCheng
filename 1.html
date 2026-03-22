@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>代入消元法互动教学动画</title>
+  
+  <style>
+    /* 原生 CSS 样式，无需任何外部网络请求 */
+    :root {
+      --blue-50: #eff6ff; --blue-100: #dbeafe; --blue-200: #bfdbfe; --blue-600: #2563eb; --blue-700: #1d4ed8;
+      --indigo-50: #eef2ff; --indigo-100: #e0e7ff; --indigo-500: #6366f1; --indigo-600: #4f46e5; --indigo-700: #4338ca;
+      --pink-50: #fdf2f8; --pink-100: #fce7f3; --pink-200: #fbcfe8; --pink-600: #db2777; --pink-700: #be185d;
+      --gray-200: #e5e7eb; --gray-300: #d1d5db; --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563; --gray-700: #374151;
+      --yellow-50: #fefce8; --yellow-300: #fde047; --yellow-400: #facc15;
+      --red-50: #fef2f2; --red-400: #f87171;
+      --green-300: #86efac; --emerald-500: #10b981; --emerald-600: #059669;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(to bottom right, var(--blue-50), var(--indigo-100));
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      box-sizing: border-box;
+    }
+
+    .container {
+      background: white;
+      border-radius: 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      padding: 2rem;
+      width: 100%;
+      max-width: 56rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--indigo-50);
+      z-index: 1;
+    }
+
+    .title-area {
+      text-align: center;
+      margin-bottom: 2rem;
+      z-index: 10;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      background: linear-gradient(to right, var(--blue-600), var(--indigo-600));
+      -webkit-background-clip: text;
+      color: transparent;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .subtitle {
+      font-size: 1.125rem;
+      color: var(--gray-600);
+      margin: 0;
+    }
+    
+    .boards {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      align-items: center;
+      justify-content: space-around;
+      gap: 2rem;
+      margin-bottom: 2.5rem;
+      z-index: 10;
+    }
+
+    @media(min-width: 768px) {
+      .boards { flex-direction: row; }
+    }
+    
+    .board {
+      padding: 1.5rem;
+      border-radius: 1rem;
+      border: 2px solid;
+      width: 100%;
+      transition: all 0.7s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    @media(min-width: 768px) {
+      .board { width: 41.66%; }
+    }
+
+    .board-left { background: var(--blue-50); border-color: var(--blue-200); }
+    .board-right { background: var(--pink-50); border-color: var(--pink-200); position: relative; }
+    
+    .board h2 {
+      font-size: 1.25rem;
+      margin: 0 0 1rem 0;
+    }
+
+    .board-left h2 { color: var(--blue-700); }
+    .board-right h2 { color: var(--pink-700); }
+    
+    .emoji-group {
+      display: flex;
+      align-items: center;
+      font-size: 3rem;
+      gap: 1rem;
+    }
+
+    .emoji-box {
+      display: flex;
+      gap: 0.25rem;
+      transition: all 0.5s ease;
+      border-radius: 9999px;
+      padding: 0.5rem;
+    }
+    
+    .arrow-area {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      color: var(--gray-300);
+      transition: all 0.7s;
+    }
+
+    @media(min-width: 768px) {
+      .arrow-area { display: flex; }
+    }
+
+    .arrow-svg {
+      width: 3rem;
+      height: 3rem;
+      transition: all 0.7s;
+    }
+
+    .arrow-text {
+      color: var(--indigo-600);
+      font-weight: bold;
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    .scale-110 { transform: scale(1.1); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+    .scale-125 { transform: scale(1.25); color: var(--indigo-500); }
+    
+    .equation {
+      margin-top: 1.5rem;
+      font-size: 1.5rem;
+      font-family: monospace;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity 0.7s;
+    }
+
+    .equation-left { color: var(--blue-600); }
+    .equation-right { color: var(--pink-600); margin-top: 2.5rem; }
+    .eq-show { opacity: 1; }
+
+    .balance-tray {
+      position: relative;
+      width: 6rem;
+      height: 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .target-apple {
+      position: absolute;
+      transition: all 0.7s ease-in-out;
+    }
+
+    .replace-oranges {
+      position: absolute;
+      display: flex;
+      gap: 0.25rem;
+      transition: all 0.7s ease-in-out;
+      opacity: 0;
+      transform: scale(0) translateY(-2.5rem);
+    }
+    
+    .msg-board {
+      width: 100%;
+      background: var(--indigo-600);
+      color: white;
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+      min-height: 6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      text-align: center;
+      box-sizing: border-box;
+      z-index: 10;
+      box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.06);
+    }
+    
+    .controls {
+      display: flex;
+      gap: 1rem;
+      z-index: 10;
+    }
+
+    button {
+      padding: 0.75rem 1.5rem;
+      border-radius: 9999px;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+
+    button:active { transform: scale(0.95); }
+    .btn-prev { background: white; color: var(--indigo-600); border: 2px solid var(--indigo-600); }
+    .btn-prev:disabled { background: var(--gray-200); color: var(--gray-400); border-color: var(--gray-200); cursor: not-allowed; transform: none; box-shadow: none;}
+    .btn-next { background: var(--indigo-600); color: white; }
+    .btn-next:hover { background: var(--indigo-700); transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+    .btn-next:disabled { cursor: not-allowed; transform: none; }
+    .btn-reset { background: var(--emerald-500); color: white; }
+    .btn-reset:hover { background: var(--emerald-600); transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+
+    .progress {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+      z-index: 10;
+    }
+
+    .dot {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 50%;
+      background: var(--gray-200);
+      transition: all 0.3s;
+    }
+
+    .dot.active { background: var(--indigo-600); transform: scale(1.1); }
+
+    /* 自定义动画效果 */
+    @keyframes bounce { 
+      0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); } 
+      50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); } 
+    }
+    .anim-bounce { animation: bounce 1s infinite; }
+
+    @keyframes pulse { 50% { opacity: .5; } }
+    .anim-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    
+    /* 装饰背景圆球 */
+    .dec-1 { position: absolute; top: -50px; left: -50px; width: 8rem; height: 8rem; background: var(--blue-100); border-radius: 50%; mix-blend-mode: multiply; filter: blur(24px); opacity: 0.5; }
+    .dec-2 { position: absolute; bottom: -50px; right: -50px; width: 10rem; height: 10rem; background: var(--pink-100); border-radius: 50%; mix-blend-mode: multiply; filter: blur(24px); opacity: 0.5; }
+
+    /* 特定步骤的样式切换 */
+    .ring-yellow { box-shadow: 0 0 0 4px var(--yellow-400); background: var(--yellow-50); }
+    .ring-red { box-shadow: 0 0 0 4px var(--red-400); background: var(--red-50); }
+    .apple-out { opacity: 0; transform: scale(0) rotate(90deg); }
+    .oranges-in { opacity: 1; transform: scale(1) translateY(0); }
+
+    /* 文字高亮辅助类 */
+    .text-yellow-300 { color: var(--yellow-300); }
+    .text-green-300 { color: var(--green-300); }
+    .text-white { color: white; }
+    .font-bold { font-weight: bold; }
+    .text-2xl { font-size: 1.5rem; }
+    .highlight-badge { background: white; color: var(--indigo-700); padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-weight: bold; margin: 0 0.25rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="title-area">
+    <h1>神奇的替换：代入消元法</h1>
+    <p class="subtitle">从直观物品到代数方程的奇妙之旅</p>
+  </div>
+
+  <div class="container">
+    <!-- 背景装饰 -->
+    <div class="dec-1"></div>
+    <div class="dec-2"></div>
+
+    <div class="boards">
+      <!-- 左侧：条件1 -->
+      <div class="board board-left" id="leftBoard">
+        <h2>已知条件 ①</h2>
+        <div class="emoji-group">
+          <span id="leftApple">🍎</span>
+          <span style="color: var(--gray-500); font-weight: bold; font-size: 2rem;">=</span>
+          <div class="emoji-box" id="leftOranges">
+            <span>🍊</span><span>🍊</span>
+          </div>
+        </div>
+        <div class="equation equation-left" id="eqLeft">x = 2y</div>
+      </div>
+
+      <!-- 中间：连接箭头 -->
+      <div class="arrow-area" id="arrowArea">
+        <svg class="arrow-svg" id="arrowSvg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+        </svg>
+        <span class="arrow-text" id="arrowText">代入</span>
+      </div>
+
+      <!-- 右侧：条件2 (天平) -->
+      <div class="board board-right">
+        <h2>已知条件 ②</h2>
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+          <div class="emoji-group" style="height: 5rem; justify-content: center; width: 100%;">
+            <div class="balance-tray">
+              <span class="target-apple" id="targetApple">🍎</span>
+              <div class="replace-oranges" id="replaceOranges">
+                <span>🍊</span><span>🍊</span>
+              </div>
+            </div>
+            <span style="color: var(--gray-500); font-weight: bold; font-size: 2rem;">+</span>
+            <span>🍊</span>
+            <span style="color: var(--gray-500); font-weight: bold; font-size: 2rem;">=</span>
+            <span style="color: var(--gray-700); font-weight: 800; font-size: 2.25rem;">300<span style="font-size: 1.5rem;">g</span></span>
+          </div>
+          <!-- 天平底座示意 -->
+          <div style="width: 100%; height: 0.5rem; background: var(--gray-400); margin-top: 0.5rem; border-radius: 9999px; position: relative;">
+            <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%) translateY(0.5rem); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 20px solid var(--gray-500);"></div>
+          </div>
+        </div>
+        <div class="equation equation-right" id="eqRight">
+          <span id="eqX">x</span> + y = 300
+        </div>
+      </div>
+    </div>
+
+    <!-- 教学解析看板 -->
+    <div class="msg-board" id="msgBoard"></div>
+
+    <!-- 控制按钮区 -->
+    <div class="controls">
+      <button class="btn-prev" id="btnPrev" disabled onclick="prevStep()">上一步</button>
+      <button class="btn-next" id="btnNext" onclick="nextStep()">开始推理</button>
+    </div>
+
+    <!-- 进度指示器 -->
+    <div class="progress" id="progressDots">
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
+
+  <script>
+    // 原生 JavaScript 逻辑控制
+    let step = 0;
+    let isAnimating = false;
+
+    // 每一阶段的教学文案
+    const messages = [
+      `<p class="fade-in">桌子上有一个苹果和一个橘子，它们总共重300克。同时我们知道，一个苹果的重量等于两个橘子。怎么求出它们各自的重量？</p>`,
+      `<p class="fade-in text-yellow-300">观察：既然 <span class="font-bold text-white">🍎 = 🍊🍊</span>，那我们是不是可以利用这个关系？</p>`,
+      `<p class="fade-in text-green-300 font-bold text-2xl">神奇的魔法发生啦！把条件②里的 🍎 <span class="text-white">“替换”</span> 成 🍊🍊。</p>`,
+      `<p class="fade-in">现在条件②变成了：<span class="font-bold text-yellow-300">🍊🍊 + 🍊 = 300g</span>。种类从两种（🍎和🍊）变成了一种（只有🍊）！</p>`,
+      `<p class="fade-in text-2xl"><span class="text-yellow-300 font-bold">3个🍊 = 300g</span>，所以 1个🍊 = 100g，进而算出 1个🍎 = 200g！</p>`,
+      `<p class="fade-in">这种 <span class="highlight-badge anim-pulse">转化</span> 的思想在我们数学学习中也经常用到。</p>`
+    ];
+
+    // 按钮文案
+    const btnLabels = ['开始推理', '执行替换', '合并同类项', '得出结果', '揭晓数学本质', '重新演示'];
+
+    // 获取 DOM 元素
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const msgBoard = document.getElementById('msgBoard');
+    const dots = document.querySelectorAll('.dot');
+    
+    const leftBoard = document.getElementById('leftBoard');
+    const leftApple = document.getElementById('leftApple');
+    const leftOranges = document.getElementById('leftOranges');
+    const arrowSvg = document.getElementById('arrowSvg');
+    const arrowText = document.getElementById('arrowText');
+    const targetApple = document.getElementById('targetApple');
+    const replaceOranges = document.getElementById('replaceOranges');
+    const eqLeft = document.getElementById('eqLeft');
+    const eqRight = document.getElementById('eqRight');
+    const eqX = document.getElementById('eqX');
+
+    // 核心 UI 更新函数
+    function updateUI() {
+      // 1. 更新按钮状态
+      btnPrev.disabled = (step === 0);
+      
+      if (step < 5) {
+        btnNext.className = 'btn-next';
+        btnNext.innerText = btnLabels[step];
+        btnNext.onclick = nextStep;
+      } else {
+        btnNext.className = 'btn-reset';
+        btnNext.innerText = btnLabels[5];
+        btnNext.onclick = resetStep;
+      }
+
+      // 2. 更新教学文案板 (重新插入触发动画)
+      msgBoard.innerHTML = messages[step];
+
+      // 3. 更新底部进度点
+      dots.forEach((dot, index) => {
+        if (index <= step) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+        }
+      });
+
+      // 4. 控制核心动画视觉状态
+      // 第1步之后：左侧条件放大
+      if (step >= 1 && step < 4) {
+        leftBoard.classList.add('scale-110');
+      } else {
+        leftBoard.classList.remove('scale-110');
+      }
+
+      // 第1步特有：跳动苹果和光环提示
+      if (step === 1) {
+        leftApple.classList.add('anim-bounce');
+        leftOranges.classList.add('ring-yellow');
+        targetApple.classList.add('ring-red');
+      } else {
+        leftApple.classList.remove('anim-bounce');
+        leftOranges.classList.remove('ring-yellow');
+        targetApple.classList.remove('ring-red');
+      }
+
+      // 第2步之后：箭头出现，并执行苹果替换为橘子的动画
+      if (step >= 2) {
+        arrowSvg.classList.add('scale-125');
+        arrowText.style.display = 'block';
+        arrowText.classList.add('anim-pulse');
+        
+        targetApple.classList.add('apple-out');
+        replaceOranges.classList.add('oranges-in');
+      } else {
+        arrowSvg.classList.remove('scale-125');
+        arrowText.style.display = 'none';
+        arrowText.classList.remove('anim-pulse');
+        
+        targetApple.classList.remove('apple-out');
+        replaceOranges.classList.remove('oranges-in');
+      }
+
+      // 第5步：揭晓代数方程
+      if (step >= 5) {
+        eqLeft.classList.add('eq-show');
+        eqRight.classList.add('eq-show');
+        eqX.innerText = '(2y)';
+        eqX.style.color = 'var(--blue-600)';
+      } else {
+        eqLeft.classList.remove('eq-show');
+        eqRight.classList.remove('eq-show');
+        eqX.innerText = 'x';
+        eqX.style.color = 'inherit';
+      }
+    }
+
+    // 交互操作
+    function nextStep() {
+      if (step < 5 && !isAnimating) {
+        isAnimating = true;
+        btnNext.disabled = true;
+        btnPrev.disabled = true;
+        step++;
+        updateUI();
+        
+        // 防止快速连续点击，给动画留出播放时间
+        setTimeout(() => {
+          isAnimating = false;
+          btnNext.disabled = false;
+          btnPrev.disabled = (step === 0);
+        }, 800);
+      }
+    }
+
+    function prevStep() {
+      if (step > 0 && !isAnimating) {
+        step--;
+        updateUI();
+      }
+    }
+
+    function resetStep() {
+      step = 0;
+      updateUI();
+    }
+
+    // 初始化页面 UI
+    updateUI();
+  </script>
+</body>
+</html>
